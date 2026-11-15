@@ -1,0 +1,32 @@
+name: Build Windows
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch/tag/commit kode sumber"
+        default: main
+        required: true
+permissions:
+  contents: write
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Ambil kode sumber (repo privat, deploy key baca-saja)
+        uses: actions/checkout@v4
+        with:
+          repository: Jasonhokjason/adu-layangan
+          ref: ${{ inputs.ref }}
+          ssh-key: ${{ secrets.SOURCE_DEPLOY_KEY }}
+          path: src
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pasang dependensi
+        working-directory: src
+        run: npm ci
+      - name: Build installer + terbitkan ke Releases repo ini
+        working-directory: src
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:electron -- --publish always
